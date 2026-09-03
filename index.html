@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<title>YouTube Highlight Clipper — Eng qiziq joyni AI bilan kesib olish</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; background:#0f0f0f; color:#fff; margin:0; padding:0; }
+  .wrap { max-width: 640px; margin: 60px auto; padding: 24px; }
+  h1 { font-size: 24px; margin-bottom: 4px; }
+  p.sub { color: #aaa; margin-top:0; }
+  input, select, button {
+    width:100%; padding:14px; margin-top:12px; border-radius:10px; border:none; font-size:15px;
+  }
+  input, select { background:#1c1c1c; color:#fff; border:1px solid #333; }
+  button {
+    background: linear-gradient(90deg,#ff4d4d,#ff8a00); color:#fff; font-weight:bold;
+    cursor:pointer; margin-top:20px;
+  }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  #status { margin-top:20px; font-size:14px; color:#ccc; white-space:pre-line; }
+  #result { margin-top:24px; padding:16px; background:#1c1c1c; border-radius:12px; display:none; }
+  #result a {
+    display:inline-block; margin-top:12px; padding:10px 18px; background:#ff4d4d;
+    color:#fff; text-decoration:none; border-radius:8px;
+  }
+  video { width:100%; border-radius:12px; margin-top:12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎬 YouTube Highlight Clipper</h1>
+  <p class="sub">Uzun video/strim linkini tashlang — AI eng qiziqarli joyni topib, vertikal formatda subtitrli montaj qilib beradi.</p>
+
+  <input id="url" type="text" placeholder="YouTube link (masalan: https://youtube.com/watch?v=...)">
+  <select id="clip_len">
+    <option value="10">~10 soniya</option>
+    <option value="15" selected>~15 soniya</option>
+    <option value="20">~20 soniya</option>
+  </select>
+  <button id="go">Eng qiziq joyni topib, kesib ber</button>
+
+  <div id="status"></div>
+
+  <div id="result">
+    <h3 id="r_title"></h3>
+    <p id="r_reason" style="color:#aaa"></p>
+    <video id="r_video" controls></video>
+    <br>
+    <a id="r_download" href="#">⬇️ Videoni yuklab olish</a>
+  </div>
+</div>
+
+<script>
+const btn = document.getElementById('go');
+const status = document.getElementById('status');
+const result = document.getElementById('result');
+
+btn.addEventListener('click', async () => {
+  const url = document.getElementById('url').value.trim();
+  const clip_len = document.getElementById('clip_len').value;
+  if (!url) { status.textContent = "Iltimos, YouTube link kiriting."; return; }
+
+  btn.disabled = true;
+  result.style.display = 'none';
+  status.textContent = "⏳ Video yuklanmoqda, transkript qilinmoqda va AI eng qiziq joyni izlamoqda...\nBu bir necha daqiqa vaqt olishi mumkin (video uzunligiga qarab).";
+
+  try {
+    const res = await fetch('/api/process', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({url, clip_len})
+    });
+    const data = await res.json();
+    if (data.error) {
+      status.textContent = "❌ Xatolik: " + data.error;
+    } else {
+      status.textContent = "✅ Tayyor!";
+      document.getElementById('r_title').textContent = data.title || "Eng qiziqarli lahza";
+      document.getElementById('r_reason').textContent =
+        (data.reason || "") + `  (${data.start.toFixed(1)}s - ${data.end.toFixed(1)}s, ball: ${data.score}/10)`;
+      document.getElementById('r_video').src = data.download_url;
+      document.getElementById('r_download').href = data.download_url;
+      result.style.display = 'block';
+    }
+  } catch (e) {
+    status.textContent = "❌ Xatolik: " + e;
+  } finally {
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: yt-highlight-clipper
+    env: docker
+    plan: free
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: WHISPER_MODEL
+        value: small
